@@ -25,55 +25,150 @@ Aria is a personal AI coaching system for Apex Legends. She watches every match 
 
 ---
 
-## Quick Start (Windows)
+## Installation & Setup — Step by Step
 
-### 1. Prerequisites
+### Step 1 — Download the file
 
-- Windows 10/11 (64-bit)
-- Python 3.11+ — [python.org/downloads](https://python.org/downloads)
-- OBS Studio — Aria installs it automatically if not found
-- Apex Legends installed via Steam
+You only need **one file**: `ARIA_ALL_IN_ONE.py`
 
-### 2. Get your OpenAI API key
+Download it from this repo:
+- Click `ARIA_ALL_IN_ONE.py` above → click the **Download raw file** button (⬇️)
+- Save it anywhere on your PC (e.g. `C:\Aria\ARIA_ALL_IN_ONE.py`)
 
-Go to [platform.openai.com/api-keys](https://platform.openai.com/api-keys) and create a key.
-
-### 3. Configure Aria
-
-Open `ARIA_START.py` in any text editor. Fill in the settings at the top:
-
-```python
-OPENAI_API_KEY = "sk-..."    # Required — paste your key here
-OBS_PASSWORD   = ""          # Only if you set a password in OBS WebSocket
-MOBILE_PORT    = 8765        # Port your phone connects to
+Or clone the whole repo:
+```bash
+git clone https://github.com/hidarikikinoakuma-ui/Aria.git
+cd Aria
 ```
 
-Everything else is auto-detected.
+---
 
-### 4. Launch
+### Step 2 — Install Python
 
-Double-click **`ARIA_START.bat`** — that's it.
+If you don't have Python 3.11 or newer:
 
-Aria will:
-1. Install all missing Python packages automatically
-2. Install OBS if not found
-3. Launch OBS with the replay buffer active
+1. Go to [python.org/downloads](https://python.org/downloads)
+2. Download the latest Python 3.x installer
+3. Run the installer — **check "Add Python to PATH"** before clicking Install
+4. Open a terminal and verify: `python --version`
+
+---
+
+### Step 3 — Get your OpenAI API key
+
+Aria uses GPT-4o to analyze your fights. This is required for coaching.
+
+1. Go to [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+2. Sign in or create an account
+3. Click **Create new secret key** — copy it (starts with `sk-`)
+4. Keep it somewhere safe — you only see it once
+
+---
+
+### Step 4 — Add your API key to the file
+
+Open `ARIA_ALL_IN_ONE.py` in any text editor (Notepad, VS Code, anything).
+
+Find the **SETTINGS** section near the top (around line 25):
+
+```python
+# ════════════════════════════════════════════════════════════════
+#  SETTINGS  —  fill these in once, never touch again
+# ════════════════════════════════════════════════════════════════
+
+OPENAI_API_KEY  = ""     # ← paste your key here between the quotes
+OBS_PASSWORD    = ""     # only if you set a password in OBS WebSocket
+MOBILE_PORT     = 8765   # port your phone connects to
+```
+
+Change the first line to:
+```python
+OPENAI_API_KEY  = "sk-your-key-here"
+```
+
+Save the file.
+
+---
+
+### Step 5 — Run Aria
+
+Open a terminal (Command Prompt or PowerShell) in the folder where you saved the file:
+
+```bash
+python ARIA_ALL_IN_ONE.py
+```
+
+**On first run, Aria will automatically:**
+1. Install all missing Python packages (takes 2–5 minutes)
+2. Download and install OBS Studio if not found
+3. Launch OBS with the replay buffer ready
 4. Write `liveapi.json` into your Apex folder
-5. Create `LAUNCH_APEX.bat` for you
+5. Create `LAUNCH_APEX.bat` on your desktop
 
-Then double-click **`LAUNCH_APEX.bat`** to start Apex with Live API enabled.
+---
 
-Aria appears automatically after your first match.
+### Step 6 — Enable OBS WebSocket (one time only)
+
+When OBS opens for the first time:
+
+1. In OBS, click **Tools** in the top menu
+2. Click **WebSocket Server Settings**
+3. Check **Enable WebSocket Server**
+4. Click **Apply** then **OK**
+
+You only need to do this once. OBS remembers the setting.
+
+---
+
+### Step 7 — Enable OBS Replay Buffer (one time only)
+
+1. In OBS, click **Tools** in the top menu
+2. Click **Replay Buffer**
+3. Set the duration to **90 seconds**
+4. Click **Start Replay Buffer** — it will auto-start on future launches
+
+---
+
+### Step 8 — Launch Apex
+
+Use the **`LAUNCH_APEX.bat`** file that Aria created (in your Aria folder).
+
+> ⚠️ **Always launch Apex through `LAUNCH_APEX.bat`** — this enables the Live API so Aria can detect kills and deaths. If you launch Apex normally from Steam, Aria can't see your match events.
+
+---
+
+### Step 9 — Play a match
+
+That's it. Aria is watching.
+
+After your first match ends, her overlay will appear automatically on your desktop with:
+- Your stats for the match
+- A full coaching breakdown of each fight
+- Your #1 habit to fix
+- Annotated clips saved to `data/clips/`
 
 ---
 
 ## First Session Checklist
 
-- [ ] Set `OPENAI_API_KEY` in `ARIA_START.py`
-- [ ] Run `ARIA_START.bat` once
-- [ ] In OBS: `Tools → WebSocket Server Settings → Enable WebSocket Server → Apply`
-- [ ] Use `LAUNCH_APEX.bat` every time to start Apex (enables Live API)
+- [ ] Python 3.11+ installed and in PATH
+- [ ] `OPENAI_API_KEY` set in `ARIA_ALL_IN_ONE.py`
+- [ ] Ran `python ARIA_ALL_IN_ONE.py` at least once
+- [ ] OBS WebSocket Server enabled (Tools → WebSocket Server Settings)
+- [ ] OBS Replay Buffer enabled and set to 90 seconds
+- [ ] Always launch Apex using `LAUNCH_APEX.bat`
 - [ ] After a match, Aria's overlay appears automatically
+
+---
+
+## Quick Start (Windows) — Returning Sessions
+
+Every session after the first:
+
+1. Run `python ARIA_ALL_IN_ONE.py` (or double-click if you create a `.bat` shortcut)
+2. Wait for the banner to appear
+3. Double-click `LAUNCH_APEX.bat` to start Apex
+4. Play — Aria handles everything else
 
 ---
 
