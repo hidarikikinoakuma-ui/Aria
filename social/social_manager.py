@@ -107,15 +107,22 @@ class SocialManager:
         """
         Post a clip highlight after a match.
         analysis is a FightAnalysis object.
+        When score >= 9.0, Aria posts in cosplay mode as the legend being played.
         Returns dict of {platform: success/error}.
         """
         score   = getattr(analysis, "overall_score",  5.0)
         verdict = getattr(analysis, "overall_verdict", "")
         fix     = getattr(analysis, "primary_fix",     "")
+        legend  = getattr(analysis, "legend_played",   self.config.get("legend_main", "Alter"))
 
-        tweet = self._write_highlight_tweet(verdict, fix, score)
+        # Cosplay mode — 9+/10 plays get posted in the legend's voice
+        if score >= 9.0:
+            tweet = self._write_cosplay_tweet(verdict, score, legend)
+            logger.info(f"🎭 Cosplay tweet as {legend} (score {score}/10)")
+        else:
+            tweet = self._write_highlight_tweet(verdict, fix, score)
+
         results = {}
-
         results["twitter"] = self._tweet(tweet)
 
         logger.info(f"Social post complete: {results}")
@@ -229,6 +236,52 @@ class SocialManager:
         lines.append(f"\n#{self.HANDLE} #ApexLegends #RoadToPredator")
 
         return "\n".join(lines)
+
+    def _write_cosplay_tweet(self, verdict: str, score: float, legend: str) -> str:
+        """
+        Write a tweet in cosplay mode — Aria channels the legend's persona
+        when the play scores 9+/10. She is so impressed she can't help herself.
+        """
+        # Legend-specific lines Aria drops into when she's hyped
+        LEGEND_LINES: dict[str, str] = {
+            "Alter":      "...that play existed between what is and what isn't. 🌀",
+            "Wraith":     "The voices said run. He ran the right way. ⚡",
+            "Bangalore":  "Oscar Mike. No hesitation. Textbook execution. 🎖️",
+            "Bloodhound": "The Allfather guided your hands on that one. 🐦‍⬛",
+            "Lifeline":   "Okay love — even I didn't think you had that in you. 💚",
+            "Pathfinder": "GREATEST. GRAPPLE. EVER. (said with full sincerity, friend!) 🤖",
+            "Octane":     "¡¡RÁPIDO!! That was actually perfect!! VAMOS!! ⚡💉",
+            "Horizon":    "The gravitational poetry of that repositioning... chef's kiss. 🪐",
+            "Loba":       "Darling. That was *exquisite.* 💎",
+            "Seer":       "The moth flies toward the light. You became the light. 🦋",
+            "Valkyrie":   "Jets hot, decision perfect. VTOL kings. 🚀",
+            "Ash":        "Acceptable. Actually — impressive. Don't tell anyone I said that.",
+            "Mad Maggie": "THAT'S what I'm talking about!! BLOW IT ALL UP!! 💥",
+            "Newcastle":  "You protected the squad AND cleaned up. That's a hero play. 🛡️",
+            "Catalyst":   "You built the play before the fight started. Beautiful. 🌊",
+            "Ballistic":  "I must say... rather magnificent. Don't let it go to your head.",
+            "Conduit":    "OH MY GOSH THAT WAS SO GOOD I can't even— 🔋✨",
+            "Revenant":   "You died eventually anyway. But not today. That was worthy.",
+            "Fuse":       "MATE. That was the best thing I've seen all season. Cheers! 🔥",
+            "Rampart":    "Okay okay even Sheila would be proud of that one 😤💪",
+            "Crypto":     "Surveillance confirmed: that play was flawless. 💻",
+            "Mirage":     "Okay but did you see THAT? That was almost as good as me. Almost.",
+            "Lifeline":   "Even I didn't think you had that in you, love. 💚",
+        }
+
+        legend_line = LEGEND_LINES.get(legend, f"That was an elite play. As {legend} would say — respect.")
+
+        tweet = (
+            f"okay i had to —\n\n"
+            f"{legend_line}\n\n"
+            f"{self.HANDLE} scored {score:.0f}/10 on that fight.\n"
+            f"Full breakdown dropping this Sunday.\n\n"
+            f"#{self.HANDLE} #ApexLegends #{legend.replace(' ','')} #RoadToPredator"
+        )
+        # Enforce 280 char limit
+        if len(tweet) > 280:
+            tweet = tweet[:277] + "..."
+        return tweet
 
     # ── Save queue for async posting ───────────────────────────
 

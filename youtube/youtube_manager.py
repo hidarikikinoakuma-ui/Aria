@@ -270,6 +270,21 @@ class YouTubeManager:
             a = highlights[0]["analysis"]
             best_highlight_text = a.get("aria_reaction", a.get("what_happened", ""))
 
+        # ── Cosplay mode ──────────────────────────────────────────────────────
+        # When the best clip scores 9+/10, Aria cosplays as the Apex legend
+        # being played — she writes the thumbnail, title, and intro voiceover
+        # in that legend's voice/persona, not her own.
+        cosplay_context = ""
+        cosplay_active  = False
+        best_score = 0.0
+        if highlights:
+            best_score = float(highlights[0].get("quality", highlights[0].get("overall_score", 0)))
+        if best_score >= 9.0:
+            cosplay_active  = True
+            legend_played   = highlights[0].get("legend", self.config.get("legend_main", "Alter"))
+            cosplay_context = self._build_cosplay_context(legend_played)
+            logger.info(f"🎭 Cosplay mode activated — Aria as {legend_played} (score {best_score}/10)")
+
         # Main mistake
         mistake_text = ""
         if mistakes and mistakes[0].get("analysis"):
@@ -284,7 +299,7 @@ class YouTubeManager:
 You are Aria (@migikonokami), an elite Apex Legends AI coach.
 You run the YouTube channel for Hidarikikinoaku (LeftHandDevil).
 You are writing the script for this week's YouTube video.
-
+{cosplay_context}
 WEEK STATS:
 - Sessions played: {total_sessions}
 - Total knocks: {total_knocks}
@@ -331,6 +346,80 @@ Respond in JSON with these keys:
         except Exception as e:
             logger.error(f"Script generation failed: {e}")
             return self._default_script(session_reports)
+
+    # ── Cosplay: Aria dresses as the Apex legend when the play was elite ──────
+
+    # Known Apex legends with personality notes for Aria to channel
+    APEX_LEGEND_PERSONAS: dict[str, str] = {
+        "Alter":      "Alter — mysterious void-walker. Speaks in short, cryptic lines. Dark humor. "
+                      "Refers to portals as 'doors between what is and what isn't.' Calls enemies 'echoes.'",
+        "Wraith":     "Wraith — cold, intense. Hears voices. Says things like 'the voices warned me.' "
+                      "Talks about the void and alternate timelines. Short sentences. Never wastes words.",
+        "Bangalore":  "Bangalore — military precision. Uses military slang: 'Oscar Mike', 'copy that', "
+                      "'sitrep'. Confident. Direct. Talks about tactics and squad positioning.",
+        "Bloodhound": "Bloodhound — Old Norse warrior energy. Says 'skál', refers to enemies as 'prey', "
+                      "mentions 'the Allfather'. Speaks with honor. Hunt metaphors.",
+        "Lifeline":   "Lifeline — Jamaican patois accent energy. Calls people 'love'. "
+                      "No-nonsense healer. 'I ain't your medic, I'm your last chance.'",
+        "Pathfinder": "Pathfinder — relentlessly cheerful MRVN robot. Says 'friend!' constantly. "
+                      "Upbeat even when describing violence. Loves grappling.",
+        "Octane":     "Octane — adrenaline junkie. FAST. Exclamation marks everywhere. "
+                      "Says 'rapido!', 'vamos!', talks about speed and stims.",
+        "Horizon":    "Horizon — Scottish scientist. Talks about gravity, black holes, her son. "
+                      "Warm but brilliant. Physics metaphors for everything.",
+        "Loba":       "Loba — glamorous thief. Speaks with aristocratic confidence. "
+                      "Fashion metaphors. Cool under pressure. Revenge motivates her.",
+        "Seer":       "Seer — poet-warrior from Boreas. Speaks beautifully. "
+                      "References moths, light, destiny. Calm intensity.",
+        "Valkyrie":   "Valkyrie — pilot's daughter. Cocky, fast-talking. Jet and flight metaphors. "
+                      "Daddy issues fuel her. Never backs down.",
+        "Ash":        "Ash — cold Simulacrum. Clinical. Says 'acceptable losses', 'nothing personal'. "
+                      "No warmth — all precision and disdain.",
+        "Mad Maggie": "Mad Maggie — furious Salvo warrior. Loud. Swears (implied). "
+                      "Hates Fuse. Talks about Salvo pride and blowing things up.",
+        "Newcastle":  "Newcastle — hero. Protective. Talks about family, the people he's saving. "
+                      "Big shield energy. Never leaves anyone behind.",
+        "Catalyst":   "Catalyst — Boreas ferrofluid sculptor. Quiet pride. Protective of her people. "
+                      "Talks about building, not destroying.",
+        "Ballistic":  "Ballistic — retired legend, old money arrogance. British-ish. "
+                      "Calls things 'rather impressive' or 'embarrassing display'. Smug.",
+        "Conduit":    "Conduit — bubbly, fan-girl energy. New to the games. "
+                      "Excited about everything. Shield cells are her thing.",
+        "Revenant":   "Revenant — death-obsessed simulacrum. Nihilistic. Mocks everything. "
+                      "'You'll die eventually anyway.' Surprisingly philosophical about death.",
+        "Fuse":       "Fuse — Australian explosives nut. Loud and friendly. "
+                      "Everything's a party. Calls people 'mate'. Loves blowing things up.",
+        "Rampart":    "Rampart — South Asian weapons modder. Street-smart, sarcastic. "
+                      "Talks about her shop, her mods, calls her LMG 'Sheila'.",
+        "Crypto":     "Crypto — paranoid hacker. Trusts no one. "
+                      "Tech jargon mixed with suspicion. 'They're watching us.'",
+        "Mirage":     "Mirage — class clown hiding insecurity. Bad jokes constantly. "
+                      "Talks about his holograms. Desperately wants approval.",
+    }
+
+    def _build_cosplay_context(self, legend: str) -> str:
+        """
+        Build the cosplay instruction block for the YouTube script prompt.
+        When the player lands a 9+/10 clip, Aria channels that legend's persona
+        in her thumbnail text, cold open, and intro voiceover.
+        """
+        persona = self.APEX_LEGEND_PERSONAS.get(
+            legend,
+            f"{legend} — channel their personality from Apex Legends lore."
+        )
+        return f"""
+⚠️  COSPLAY MODE ACTIVE — BEST CLIP SCORED 9+/10
+The player absolutely popped off this week. Aria is so impressed she's channeling
+the legend they were playing: {legend}.
+
+For these specific fields ONLY — thumbnail_text, cold_open_text, aria_intro_voiceover:
+Write them AS {legend}, not as Aria. Channel this persona:
+{persona}
+
+Then snap back to Aria's normal voice for the rest of the script.
+Make it clear this is Aria dressed up — she can break character briefly to say
+something like "okay okay, I had to — that play deserved it."
+"""
 
     def _default_script(self, session_reports: list) -> dict:
         """Fallback script if API unavailable."""

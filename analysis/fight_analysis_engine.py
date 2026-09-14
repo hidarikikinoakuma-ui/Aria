@@ -62,6 +62,7 @@ class FightAnalysis:
     event_type:          str   = ""  # "knocked_by_enemy" | "killed_by_enemy" | "knocked_enemy" | "killed_enemy"
     timestamp:           float = 0.0
     analyzed_at:         str   = field(default_factory=lambda: datetime.now().isoformat())
+    legend_played:       str   = "Alter"  # Apex legend being played — used for cosplay mode on elite clips
 
     # Aria's verdict
     overall_verdict:     str   = ""  # Sharp one-liner. e.g. "Bad peek — you invited a third party."
@@ -185,6 +186,7 @@ class FightAnalysisEngine:
         controller_summary: str  = "",
         session_summary:    dict = None,
         live_api_context:   dict = None,
+        legend_played:      str  = "Alter",
     ) -> Optional[FightAnalysis]:
         """
         Analyze a single fight clip and return a FightAnalysis.
@@ -197,6 +199,7 @@ class FightAnalysisEngine:
             session_summary:    Optional dict from OBSClipManager.end_session()
             live_api_context:   Optional dict with damage_dealt, damage_taken, attacker_name
                                 (populated by apex_live_api.py when available)
+            legend_played:      Apex legend being played (used for cosplay mode on 9+/10 clips)
         """
         session_summary  = session_summary  or {}
         live_api_context = live_api_context or {}
@@ -209,6 +212,7 @@ class FightAnalysisEngine:
             damage_dealt=live_api_context.get("damage_dealt", 0),
             damage_taken=live_api_context.get("damage_taken", 0),
             attacker_name=live_api_context.get("attacker_name", ""),
+            legend_played=legend_played,
         )
 
         if not Path(clip_path).exists():
