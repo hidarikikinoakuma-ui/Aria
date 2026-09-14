@@ -21,7 +21,7 @@
 ║    Then double-click  LAUNCH_APEX.bat  to start Apex         ║
 ║                                                              ║
 ║  FIRST RUN:                                                  ║
-║    Set OPENAI_API_KEY below (platform.openai.com/api-keys)   ║
+║    Set NIM_API_KEY below (build.nvidia.com — free credits)   ║
 ║                                                              ║
 ║  Player: Hidarikikinoaku (LeftHandDevil)                     ║
 ║  Coach:  Aria (@migikonokami / RightHandGod)                 ║
@@ -32,7 +32,9 @@
 #  SETTINGS  —  fill these in once, never touch again
 # ════════════════════════════════════════════════════════════════
 
-OPENAI_API_KEY  = ""          # Required for coaching. platform.openai.com/api-keys
+NIM_API_KEY     = ""          # Primary. Free credits at build.nvidia.com (sign up → API Key)
+OPENAI_API_KEY  = ""          # Fallback. Set AI_BACKEND = "openai" below to use instead
+AI_BACKEND      = "nim"       # "nim" (default, free) or "openai"
 OBS_PASSWORD    = ""          # Only if you set a password in OBS WebSocket settings
 MOBILE_PORT     = 8765        # Port your phone connects to
 
@@ -137,6 +139,32 @@ try:
     OPENAI_AVAILABLE = True
 except ImportError:
     OPENAI_AVAILABLE = False
+
+# ── AI backend factory ────────────────────────────────────────────────────────
+_NIM_BASE_URL        = "https://integrate.api.nvidia.com/v1"
+_NIM_VISION_MODEL    = "meta/llama-3.2-90b-vision-instruct"
+_NIM_TEXT_MODEL      = "meta/llama-3.2-90b-vision-instruct"
+_OPENAI_VISION_MODEL = "gpt-4o"
+_OPENAI_TEXT_MODEL   = "gpt-4o"
+
+def _build_ai_client(config: dict):
+    """Return (OpenAI-compatible client, vision_model, text_model) or (None, …)."""
+    if not OPENAI_AVAILABLE:
+        return None, _NIM_VISION_MODEL, _NIM_TEXT_MODEL
+
+    backend = config.get("ai_backend", AI_BACKEND).lower()
+
+    if backend == "openai":
+        key = config.get("openai_api_key", OPENAI_API_KEY).strip()
+        if not key:
+            return None, _OPENAI_VISION_MODEL, _OPENAI_TEXT_MODEL
+        return OpenAI(api_key=key), _OPENAI_VISION_MODEL, _OPENAI_TEXT_MODEL
+    else:  # nim (default)
+        key = config.get("nim_api_key", NIM_API_KEY).strip()
+        if not key:
+            return None, _NIM_VISION_MODEL, _NIM_TEXT_MODEL
+        return OpenAI(base_url=_NIM_BASE_URL, api_key=key), _NIM_VISION_MODEL, _NIM_TEXT_MODEL
+# ─────────────────────────────────────────────────────────────────────────────
 
 try:
     from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
@@ -1293,10 +1321,7 @@ Under 300 words. Direct, caring, high standards. No generic AI language. Plain t
 class FightAnalysisEngine:
     def __init__(self, config: dict):
         self.config = config
-        api_key = config.get("openai_api_key", "").strip()
-        self.client = OpenAI(api_key=api_key) if (OPENAI_AVAILABLE and api_key) else None
-        self.vision_model   = config.get("vision_model",   "gpt-4o")
-        self.coaching_model = config.get("coaching_model", "gpt-4o")
+        self.client, self.vision_model, self.coaching_model = _build_ai_client(config)
         self.max_frames     = int(config.get("max_frames_per_clip", 8))
         self.reports_folder = config.get("reports_folder", "data/reports")
         os.makedirs(self.reports_folder, exist_ok=True)
@@ -1465,11 +1490,11 @@ class FightAnalysisEngine:
                        else "Clip recorded — API key needed for full analysis.")
         analysis.overall_verdict  = verdict
         analysis.fight_quality    = "mistake" if is_m else "clean"
-        analysis.primary_fix      = "Add OpenAI API key to config/aria.conf for coaching."
+        analysis.primary_fix      = "Add NIM_API_KEY (or OPENAI_API_KEY) to ARIA_ALL_IN_ONE.py for coaching."
         analysis.key_moment       = "Unknown — no API analysis"
         for attr in ("positioning_score","movement_score","aim_score","decision_score","overall_score"):
             setattr(analysis, attr, 5.0)
-        analysis.what_went_wrong  = "Full analysis unavailable without OpenAI API key."
+        analysis.what_went_wrong  = "Full analysis unavailable without an AI API key."
         analysis.specific_drill   = "Watch the clip. Note one thing you'd do differently."
         analysis.aria_quote       = ("I can't coach you without my eyes open. "
                                      "Add your API key — every match you skip is wasted data.")
@@ -1512,8 +1537,8 @@ class FightAnalysisEngine:
         if mv:
             lines.append(f"Moving while aiming: {mv}% — "
                          f"{'good' if mv >= 65 else 'needs work'} (target: 65%+)\n")
-        lines += ["\nAdd your OpenAI API key to config/aria.conf for full coaching.",
-                  "Get one at: https://platform.openai.com/api-keys\n", "— Aria"]
+        lines += ["\nAdd NIM_API_KEY to ARIA_ALL_IN_ONE.py for full coaching.",
+                  "Free credits at: https://build.nvidia.com\n", "— Aria"]
         return "\n".join(lines)
 
 
@@ -1609,11 +1634,10 @@ class MobileCompanionAPI:
 
     def __init__(self, config: dict):
         self.config       = config
-        self.api_key      = config.get("openai_api_key", "")
         self.data_dir     = Path("data")
         self.clips_dir    = self.data_dir / "clips"
         self.static_dir   = Path("mobile/static")
-        self.openai       = OpenAI(api_key=self.api_key) if (OPENAI_AVAILABLE and self.api_key) else None
+        self.openai, self._chat_model, _ = _build_ai_client(config)
         self.conversations: dict[str, list] = {}
 
     def build_app(self):
@@ -1709,8 +1733,8 @@ class MobileCompanionAPI:
 
     async def _chat(self, message: str, session_key: str) -> tuple:
         if not self.openai:
-            return ("Chat requires an OpenAI API key. "
-                    "Add it to config/aria.conf.", [])
+            return ("Chat requires an API key. "
+                    "Add NIM_API_KEY to ARIA_ALL_IN_ONE.py (free at build.nvidia.com).", [])
         if session_key not in self.conversations:
             self.conversations[session_key] = []
         rank    = self.config.get("current_rank", "Gold IV")
@@ -1723,7 +1747,7 @@ class MobileCompanionAPI:
         clip_refs = self._find_relevant_clips(message)
         try:
             response = self.openai.chat.completions.create(
-                model="gpt-4o",
+                model=self._chat_model,
                 messages=[{"role":"system","content":system}, *history],
                 max_tokens=300, temperature=0.5,
             )
@@ -2164,7 +2188,6 @@ LEGEND_COSPLAY_LINES: dict[str, str] = {
 class YouTubeManager:
     def __init__(self, config: dict):
         self.config        = config
-        self.api_key       = config.get("openai_api_key", "")
         self.upload_day    = config.get("upload_day", "sunday")
         self.upload_time   = config.get("upload_time", "20:00")
         self.visibility    = config.get("default_visibility", "public")
@@ -2172,7 +2195,7 @@ class YouTubeManager:
         self.clips_dir     = Path("data/clips")
         self.week_queue: list[dict] = []
         self.youtube       = None
-        self.openai_client = OpenAI(api_key=self.api_key) if (OPENAI_AVAILABLE and self.api_key) else None
+        self.openai_client, _, self._text_model = _build_ai_client(config)
 
     def authenticate(self, credentials_file="config/youtube_credentials.json",
                      token_file="config/youtube_token.json") -> bool:
@@ -2256,8 +2279,8 @@ class YouTubeManager:
         )
         try:
             resp   = self.openai_client.chat.completions.create(
-                model="gpt-4o", messages=[{"role":"user","content":prompt}],
-                max_tokens=1200, temperature=0.7, response_format={"type":"json_object"})
+                model=self._text_model, messages=[{"role":"user","content":prompt}],
+                max_tokens=1200, temperature=0.7)
             return json.loads(resp.choices[0].message.content)
         except Exception as e:
             logger.error(f"Script gen failed: {e}"); return self._default_script(session_reports)
