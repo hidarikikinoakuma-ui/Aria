@@ -1859,14 +1859,33 @@ def run_mobile_server(config: dict, host: str = "0.0.0.0", port: int = MOBILE_PO
 if PYQT5_AVAILABLE:
     class VoiceThread(QThread):
         done = pyqtSignal()
-        def __init__(self, text, engine):
-            super().__init__(); self.text = text; self.engine = engine
+        def __init__(self, text, engine, speaker_wav=None, language="en"):
+            super().__init__()
+            self.text        = text
+            self.engine      = engine
+            self.speaker_wav = speaker_wav
+            self.language    = language
         def run(self):
             try:
                 if self.engine:
                     path = "data/aria_voice.wav"
                     os.makedirs("data", exist_ok=True)
-                    self.engine.tts_to_file(text=self.text, file_path=path)
+                    if self.speaker_wav and os.path.exists(self.speaker_wav):
+                        # XTTS v2 multi-speaker mode — uses reference wav for voice style
+                        self.engine.tts_to_file(
+                            text=self.text,
+                            file_path=path,
+                            speaker_wav=self.speaker_wav,
+                            language=self.language,
+                        )
+                    else:
+                        # XTTS v2 with built-in default speaker
+                        self.engine.tts_to_file(
+                            text=self.text,
+                            file_path=path,
+                            speaker="Ana Florence",  # warm, clear female voice included with XTTS v2
+                            language=self.language,
+                        )
                     if sys.platform == "win32":
                         import winsound
                         winsound.PlaySound(path, winsound.SND_FILENAME)
@@ -1972,9 +1991,14 @@ if PYQT5_AVAILABLE:
         def _init_tts(self):
             if not TTS_AVAILABLE: return
             try:
-                self.tts = CoquiTTS(model_name="tts_models/en/ljspeech/tacotron2-DDC",
-                                    progress_bar=False, gpu=self._gpu())
-                logger.info("Aria voice ready ✅")
+                self.tts = CoquiTTS(
+                    model_name="tts_models/multilingual/multi-dataset/xtts_v2",
+                    progress_bar=False,
+                    gpu=self._gpu(),
+                )
+                # Speaker reference wav — drop assets/aria_voice_ref.wav to customise Aria's voice
+                self._speaker_wav = "assets/aria_voice_ref.wav" if os.path.exists("assets/aria_voice_ref.wav") else None
+                logger.info("Aria voice ready ✅ (XTTS v2)")
             except Exception as e:
                 logger.warning(f"TTS failed: {e}")
 
@@ -2079,7 +2103,7 @@ if PYQT5_AVAILABLE:
         def _speak(self, text: str):
             if not self.tts: return
             self.sprite.set_state(TALKING)
-            self._vthread = VoiceThread(text, self.tts)
+            self._vthread = VoiceThread(text, self.tts, speaker_wav=getattr(self, "_speaker_wav", None))
             self._vthread.done.connect(lambda: self.sprite.set_state(IDLE))
             self._vthread.start()
 
