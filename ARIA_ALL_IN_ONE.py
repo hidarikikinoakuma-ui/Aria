@@ -142,8 +142,8 @@ except ImportError:
 
 # ── AI backend factory ────────────────────────────────────────────────────────
 _NIM_BASE_URL        = "https://integrate.api.nvidia.com/v1"
-_NIM_VISION_MODEL    = "meta/llama-3.2-90b-vision-instruct"
-_NIM_TEXT_MODEL      = "meta/llama-3.2-90b-vision-instruct"
+_NIM_VISION_MODEL    = "qwen/qwen3.5-vl"
+_NIM_TEXT_MODEL      = "qwen/qwen3.5-vl"
 _OPENAI_VISION_MODEL = "gpt-4o"
 _OPENAI_TEXT_MODEL   = "gpt-4o"
 
