@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0D0D1E">
+  <title>Aria | Coach</title>
+  <link rel="manifest" href="/static/manifest.json">
+  <style>
+    /* ── Reset & Base ──────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red:    #C0392B;
+      --blue:   #2E86AB;
+      --gold:   #F39C12;
+      --green:  #27AE60;
+      --dark:   #0D0D1E;
+      --panel:  #1A1A2E;
+      --card:   #16213E;
+      --text:   #ECEFF1;
+      --muted:  #90A4AE;
+      --border: rgba(46,134,171,0.3);
+    }
+
+    body {
+      background: var(--dark);
+      color: var(--text);
+      font-family: -apple-system, 'Segoe UI', Arial, sans-serif;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────────── */
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .aria-avatar {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--red), var(--blue));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+      border: 2px solid var(--blue);
+    }
+
+    .header-info { flex: 1; min-width: 0; }
+    .header-name {
+      font-size: 15px; font-weight: 700;
+      color: var(--red); letter-spacing: 1px;
+    }
+    .header-sub {
+      font-size: 11px; color: var(--blue); margin-top: 1px;
+    }
+    .rank-badge {
+      background: rgba(243,156,18,0.15);
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 12px;
+      white-space: nowrap;
+    }
+
+    /* ── Tab Bar ─────────────────────────────────────────────────────── */
+    .tab-bar {
+      display: flex;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .tab {
+      flex: 1; padding: 10px 4px;
+      text-align: center; font-size: 10px;
+      color: var(--muted); cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 3px;
+    }
+    .tab .icon { font-size: 18px; }
+    .tab.active {
+      color: var(--blue);
+      border-bottom-color: var(--blue);
+    }
+
+    /* ── Main Content ────────────────────────────────────────────────── */
+    main {
+      flex: 1; overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .tab-content { display: none; height: 100%; }
+    .tab-content.active { display: block; }
+
+    /* ── Chat ────────────────────────────────────────────────────────── */
+    #tab-chat {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+    }
+    #tab-chat.active {
+      display: flex;
+    }
+
+    .chat-messages {
+      flex: 1; overflow-y: auto;
+      padding: 12px;
+      display: flex; flex-direction: column; gap: 10px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .msg {
+      max-width: 82%;
+      padding: 10px 13px;
+      border-radius: 16px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .msg.aria {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+      align-self: flex-start;
+    }
+    .msg.aria .sender {
+      font-size: 10px; color: var(--red);
+      font-weight: 700; margin-bottom: 4px;
+      letter-spacing: 1px;
+    }
+    .msg.user {
+      background: rgba(46,134,171,0.18);
+      border: 1px solid rgba(46,134,171,0.3);
+      border-bottom-right-radius: 4px;
+      align-self: flex-end;
+      color: var(--text);
+    }
+
+    .clip-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      margin-top: 6px;
+      cursor: pointer;
+    }
+    .clip-card:active { opacity: 0.7; }
+    .clip-card .clip-type {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 1px; margin-bottom: 4px;
+    }
+    .clip-card .clip-type.mistake { color: var(--red); }
+    .clip-card .clip-type.highlight { color: var(--green); }
+    .clip-card .clip-preview {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .clip-thumb {
+      width: 70px; height: 40px;
+      background: var(--panel); border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
+    }
+    .clip-info { font-size: 12px; color: var(--muted); }
+    .clip-verdict {
+      font-size: 11px; color: var(--text);
+      font-weight: 600; margin-top: 2px;
+    }
+
+    .chat-input-area {
+      padding: 10px 12px;
+      padding-bottom: max(10px, env(safe-area-inset-bottom));
+      background: var(--panel);
+      border-top: 1px solid var(--border);
+      display: flex; gap: 8px; align-items: flex-end;
+    }
+
+    .chat-input {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 9px 14px;
+      color: var(--text);
+      font-size: 14px;
+      resize: none;
+      max-height: 100px;
+      outline: none;
+      font-family: inherit;
+    }
+    .chat-input:focus { border-color: var(--blue); }
+
+    .send-btn {
+      width: 38px; height: 38px;
+      background: var(--blue);
+      border: none; border-radius: 50%;
+      color: white; font-size: 16px;
+      cursor: pointer; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .send-btn:active { opacity: 0.7; }
+
+    /* ── Clips Tab ───────────────────────────────────────────────────── */
+    .section-header {
+      padding: 14px 16px 8px;
+      font-size: 11px; font-weight: 700;
+      color: var(--muted); letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .clips-list {
+      padding: 0 12px 12px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+
+    .clip-row {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      cursor: pointer;
+      display: flex; gap: 10px; align-items: center;
+    }
+    .clip-row:active { opacity: 0.7; }
+    .clip-row-thumb {
+      width: 80px; height: 50px;
+      background: var(--panel); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; flex-shrink: 0;
+    }
+    .clip-row-info { flex: 1; min-width: 0; }
+    .clip-row-type {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 1px; margin-bottom: 3px;
+    }
+    .clip-row-type.mistake { color: var(--red); }
+    .clip-row-type.highlight { color: var(--green); }
+    .clip-row-verdict { font-size: 13px; color: var(--text); }
+    .clip-row-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* ── Roadmap Tab ─────────────────────────────────────────────────── */
+    .roadmap-content {
+      padding: 12px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+
+    .rank-progress-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .rank-title {
+      font-size: 12px; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .rank-display {
+      font-size: 24px; font-weight: 700;
+      color: var(--gold);
+    }
+
+    .rp-bar-wrap {
+      margin-top: 12px;
+    }
+
+    .rp-bar-label {
+      display: flex; justify-content: space-between;
+      font-size: 11px; color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .rp-bar {
+      height: 6px; background: rgba(255,255,255,0.1);
+      border-radius: 3px; overflow: hidden;
+    }
+
+    .rp-fill {
+      height: 100%; border-radius: 3px;
+      background: linear-gradient(90deg, var(--gold), var(--red));
+      transition: width 1s ease;
+    }
+
+    .predator-target {
+      margin-top: 10px;
+      font-size: 12px; color: var(--muted);
+      text-align: center;
+    }
+
+    .predator-target strong {
+      color: var(--red); font-size: 13px;
+    }
+
+    .blocker-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .blocker-title {
+      font-size: 11px; font-weight: 700;
+      color: var(--red); letter-spacing: 1px;
+      text-transform: uppercase; margin-bottom: 10px;
+    }
+
+    .blocker-item {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+    .blocker-item:last-child { border-bottom: none; }
+    .blocker-num {
+      width: 20px; height: 20px;
+      background: rgba(192,57,43,0.2);
+      border: 1px solid var(--red);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; color: var(--red);
+      flex-shrink: 0;
+    }
+
+    .focus-card {
+      background: rgba(46,134,171,0.08);
+      border: 1px solid rgba(46,134,171,0.4);
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .focus-label {
+      font-size: 10px; color: var(--blue);
+      letter-spacing: 1px; text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .focus-text {
+      font-size: 14px; font-weight: 600;
+      color: var(--text);
+    }
+
+    /* ── Video Player ────────────────────────────────────────────────── */
+    .video-modal {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.95);
+      z-index: 1000;
+      flex-direction: column;
+    }
+    .video-modal.open { display: flex; }
+
+    .video-modal-header {
+      padding: 12px 16px;
+      display: flex; align-items: center; gap: 10px;
+      background: var(--panel);
+    }
+
+    .close-btn {
+      background: none; border: none;
+      color: var(--muted); font-size: 22px;
+      cursor: pointer; padding: 0;
+    }
+
+    .modal-title {
+      flex: 1; font-size: 13px; font-weight: 600;
+      color: var(--text);
+    }
+
+    .video-wrap {
+      position: relative; background: black;
+    }
+
+    video {
+      width: 100%; display: block;
+      max-height: 40vh; background: black;
+    }
+
+    .narration-panel {
+      flex: 1; overflow-y: auto;
+      padding: 12px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+
+    .narration-msg {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .narration-msg .n-sender {
+      font-size: 10px; color: var(--red);
+      font-weight: 700; letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+    .narration-msg .n-text {
+      font-size: 13px; line-height: 1.5;
+    }
+    .narration-msg.alert {
+      border-color: rgba(243,156,18,0.5);
+      background: rgba(243,156,18,0.05);
+    }
+    .narration-msg.coaching {
+      border-left: 3px solid var(--red);
+    }
+    .narration-msg.summary {
+      border-color: var(--green);
+      background: rgba(39,174,96,0.05);
+    }
+
+    /* ── Typing indicator ────────────────────────────────────────────── */
+    .typing {
+      display: flex; gap: 4px;
+      align-items: center; padding: 4px 0;
+    }
+    .typing span {
+      width: 6px; height: 6px;
+      background: var(--muted);
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-6px); }
+    }
+
+    /* ── Scrollbar ───────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="aria-avatar">⚔️</div>
+  <div class="header-info">
+    <div class="header-name">ARIA</div>
+    <div class="header-sub">@migikonokami · coaching Hidarikikinoaku</div>
+  </div>
+  <div class="rank-badge" id="rank-badge">Gold IV</div>
+</header>
+
+<!-- Tab Bar -->
+<div class="tab-bar">
+  <div class="tab active" onclick="switchTab('chat')" id="tab-btn-chat">
+    <span class="icon">💬</span>Chat
+  </div>
+  <div class="tab" onclick="switchTab('clips')" id="tab-btn-clips">
+    <span class="icon">🎬</span>Clips
+  </div>
+  <div class="tab" onclick="switchTab('roadmap')" id="tab-btn-roadmap">
+    <span class="icon">🏆</span>Roadmap
+  </div>
+</div>
+
+<!-- Main -->
+<main>
+
+  <!-- ── Chat Tab ──────────────────────────────────────────────────── -->
+  <div id="tab-chat" class="tab-content active" style="display:flex; flex-direction:column; height:100%;">
+    <div class="chat-messages" id="chat-messages">
+      <!-- Welcome message -->
+      <div class="msg aria">
+        <div class="sender">ARIA</div>
+        You're back. How's the grind going?<br><br>
+        Ask me about any match, any clip, or tell me what you're struggling with.
+        I have all your session data here.
+      </div>
+    </div>
+    <div class="chat-input-area">
+      <textarea class="chat-input" id="chat-input" rows="1"
+        placeholder="Ask Aria anything..."
+        onkeydown="handleKey(event)"
+        oninput="autoResize(this)"></textarea>
+      <button class="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+
+  <!-- ── Clips Tab ─────────────────────────────────────────────────── -->
+  <div id="tab-clips" class="tab-content">
+    <div class="section-header">⚠️ MISTAKE CLIPS</div>
+    <div class="clips-list" id="mistakes-list">
+      <div style="color:var(--muted);font-size:13px;padding:8px;">
+        Loading clips...
+      </div>
+    </div>
+    <div class="section-header">⭐ HIGHLIGHTS</div>
+    <div class="clips-list" id="highlights-list">
+      <div style="color:var(--muted);font-size:13px;padding:8px;">
+        Loading clips...
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Roadmap Tab ────────────────────────────────────────────────── -->
+  <div id="tab-roadmap" class="tab-content">
+    <div class="roadmap-content">
+
+      <!-- Rank Progress -->
+      <div class="rank-progress-card">
+        <div class="rank-title">Current Rank</div>
+        <div class="rank-display" id="roadmap-rank">Gold IV</div>
+        <div class="rp-bar-wrap">
+          <div class="rp-bar-label">
+            <span id="rp-current">143 RP</span>
+            <span id="rp-next">750 RP</span>
+          </div>
+          <div class="rp-bar">
+            <div class="rp-fill" id="rp-fill" style="width:19%"></div>
+          </div>
+        </div>
+        <div class="predator-target" id="predator-eta">
+          Loading Predator estimate...
+        </div>
+      </div>
+
+      <!-- This week's focus -->
+      <div class="focus-card">
+        <div class="focus-label">📌 This Session's Focus</div>
+        <div class="focus-text" id="current-focus">
+          Left stick active — move while you aim
+        </div>
+      </div>
+
+      <!-- Top blockers -->
+      <div class="blocker-card">
+        <div class="blocker-title">Top Blockers to Predator</div>
+        <div id="blockers-list">
+          <div class="blocker-item">
+            <div class="blocker-num">1</div>
+            <div>Loading...</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<!-- Video Player Modal -->
+<div class="video-modal" id="video-modal">
+  <div class="video-modal-header">
+    <button class="close-btn" onclick="closeVideo()">✕</button>
+    <div class="modal-title" id="modal-title">Clip Review</div>
+  </div>
+  <div class="video-wrap">
+    <video id="clip-player" controls playsinline></video>
+  </div>
+  <div class="narration-panel" id="narration-panel">
+    <div class="msg aria">
+      <div class="sender">ARIA</div>
+      <div>Loading clip analysis...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';   // empty = same origin
+
+// ── Tab switching ─────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(`tab-${name}`).classList.add('active');
+  document.getElementById(`tab-btn-${name}`).classList.add('active');
+
+  if (name === 'clips') loadClips();
+  if (name === 'roadmap') loadRoadmap();
+}
+
+// ── Chat ──────────────────────────────────────────────────────────────────
+let sessionKey = 'mobile_' + Date.now();
+
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const text  = input.value.trim();
+  if (!text) return;
+
+  appendMsg(text, 'user');
+  input.value = '';
+  input.style.height = 'auto';
+
+  const typing = appendTyping();
+
+  try {
+    const res = await fetch(`${API}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, session_key: sessionKey })
+    });
+    const data = await res.json();
+    typing.remove();
+
+    appendMsg(data.response, 'aria');
+
+    // If Aria is referencing clips, show them
+    if (data.clip_refs && data.clip_refs.length > 0) {
+      data.clip_refs.forEach(clip => appendClipCard(clip));
+    }
+  } catch (e) {
+    typing.remove();
+    appendMsg("Can't reach Aria right now. Make sure the PC app is running.", 'aria');
+  }
+}
+
+function appendMsg(text, role) {
+  const wrap = document.getElementById('chat-messages');
+  const div  = document.createElement('div');
+  div.className = `msg ${role}`;
+  if (role === 'aria') div.innerHTML = `<div class="sender">ARIA</div>${escHtml(text).replace(/\n/g,'<br>')}`;
+  else div.textContent = text;
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+  return div;
+}
+
+function appendTyping() {
+  const wrap = document.getElementById('chat-messages');
+  const div  = document.createElement('div');
+  div.className = 'msg aria';
+  div.innerHTML = `<div class="sender">ARIA</div>
+    <div class="typing"><span></span><span></span><span></span></div>`;
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+  return div;
+}
+
+function appendClipCard(clip) {
+  const wrap = document.getElementById('chat-messages');
+  const isM  = clip.event_type && clip.event_type.includes('enemy');
+  const div  = document.createElement('div');
+  div.className = 'clip-card';
+  div.innerHTML = `
+    <div class="clip-type ${isM ? 'mistake' : 'highlight'}">
+      ${isM ? '⚠️ MISTAKE CLIP' : '⭐ HIGHLIGHT'}
+    </div>
+    <div class="clip-preview">
+      <div class="clip-thumb">${isM ? '💀' : '🔥'}</div>
+      <div class="clip-info">
+        <div class="clip-verdict">${clip.event_type || 'Fight clip'}</div>
+        <div>${clip.session_id || ''}</div>
+      </div>
+    </div>`;
+  div.onclick = () => openClip(clip);
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+// ── Clips ─────────────────────────────────────────────────────────────────
+async function loadClips() {
+  try {
+    const res   = await fetch(`${API}/api/clips?limit=30`);
+    const data  = await res.json();
+    const clips = data.clips || [];
+
+    const mistakes   = clips.filter(c => c.event_type && c.event_type.includes('enemy'));
+    const highlights = clips.filter(c => c.event_type && !c.event_type.includes('enemy'));
+
+    renderClipList('mistakes-list', mistakes, true);
+    renderClipList('highlights-list', highlights, false);
+  } catch (e) {
+    document.getElementById('mistakes-list').innerHTML =
+      '<div style="color:var(--muted);font-size:13px;padding:8px;">PC app offline</div>';
+  }
+}
+
+function renderClipList(containerId, clips, isMistake) {
+  const el = document.getElementById(containerId);
+  if (!clips.length) {
+    el.innerHTML = `<div style="color:var(--muted);font-size:13px;padding:8px;">
+      No ${isMistake ? 'mistake' : 'highlight'} clips yet</div>`;
+    return;
+  }
+  el.innerHTML = clips.slice(0, 10).map(clip => `
+    <div class="clip-row" onclick='openClip(${JSON.stringify(clip)})'>
+      <div class="clip-row-thumb">${isMistake ? '💀' : '🔥'}</div>
+      <div class="clip-row-info">
+        <div class="clip-row-type ${isMistake ? 'mistake' : 'highlight'}">
+          ${isMistake ? '⚠️ MISTAKE' : '⭐ HIGHLIGHT'}
+        </div>
+        <div class="clip-row-verdict">${clip.event_type || 'Fight clip'}</div>
+        <div class="clip-row-meta">${clip.session_id || ''}</div>
+      </div>
+      <span style="color:var(--muted);font-size:18px;">›</span>
+    </div>
+  `).join('');
+}
+
+// ── Roadmap ───────────────────────────────────────────────────────────────
+async function loadRoadmap() {
+  try {
+    const res  = await fetch(`${API}/api/roadmap`);
+    const data = await res.json();
+
+    document.getElementById('roadmap-rank').textContent =
+      data.current_rank || 'Gold IV';
+    document.getElementById('rank-badge').textContent =
+      data.current_rank || 'Gold IV';
+    document.getElementById('rp-current').textContent =
+      `${data.current_rp || 0} RP`;
+    document.getElementById('rp-next').textContent =
+      `${(data.current_rp || 0) + 200} RP`;
+
+    const pct = Math.min(100, Math.round(((data.current_rp || 0) / 750) * 100));
+    document.getElementById('rp-fill').style.width = pct + '%';
+
+    if (data.eta_weeks) {
+      document.getElementById('predator-eta').innerHTML =
+        `<strong>${Math.round(data.rp_to_predator || 0).toLocaleString()} RP</strong> to Predator
+         · est. ${data.eta_weeks} weeks at current rate`;
+    }
+
+    if (data.this_week_focus) {
+      document.getElementById('current-focus').textContent = data.this_week_focus;
+    }
+
+    if (data.top_blockers && data.top_blockers.length) {
+      document.getElementById('blockers-list').innerHTML =
+        data.top_blockers.map((b, i) => `
+          <div class="blocker-item">
+            <div class="blocker-num">${i + 1}</div>
+            <div>${escHtml(b)}</div>
+          </div>`).join('');
+    }
+
+  } catch (e) {
+    console.error('Roadmap load failed:', e);
+  }
+}
+
+// ── Video Player ──────────────────────────────────────────────────────────
+let narrationWS = null;
+
+function openClip(clip) {
+  const modal   = document.getElementById('video-modal');
+  const player  = document.getElementById('clip-player');
+  const panel   = document.getElementById('narration-panel');
+  const title   = document.getElementById('modal-title');
+
+  modal.classList.add('open');
+  title.textContent = clip.event_type || 'Clip Review';
+  panel.innerHTML   = '';
+
+  // Load video
+  const clipId  = clip.clip_id || clip.event_type;
+  player.src    = `${API}/api/clips/${clipId}/video`;
+  player.load();
+
+  // Add initial narration
+  addNarration('Ready to review. Press play when you are.', 'aria');
+
+  // Connect WebSocket for real-time narration
+  if (narrationWS) narrationWS.close();
+
+  const wsProto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const wsHost  = location.host;
+  narrationWS   = new WebSocket(`${wsProto}://${wsHost}/ws/narrate/${clipId}`);
+
+  narrationWS.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'ready') {
+      // Start playing when WebSocket is ready
+    } else if (msg.type === 'narration' || msg.type === 'coaching'
+            || msg.type === 'alert'    || msg.type === 'summary') {
+      addNarration(msg.text, msg.type);
+    }
+  };
+
+  narrationWS.onerror = () => {
+    addNarration('Playing clip. Analysis syncing...', 'aria');
+  };
+}
+
+function addNarration(text, type) {
+  const panel = document.getElementById('narration-panel');
+  const div   = document.createElement('div');
+  div.className = `narration-msg ${type}`;
+  div.innerHTML = `<div class="n-sender">ARIA</div>
+                   <div class="n-text">${escHtml(text)}</div>`;
+  panel.appendChild(div);
+  panel.scrollTop = panel.scrollHeight;
+}
+
+function closeVideo() {
+  document.getElementById('video-modal').classList.remove('open');
+  document.getElementById('clip-player').pause();
+  document.getElementById('clip-player').src = '';
+  if (narrationWS) { narrationWS.close(); narrationWS = null; }
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const res  = await fetch(`${API}/api/profile`);
+    const data = await res.json();
+    document.getElementById('rank-badge').textContent = data.current_rank || 'Gold IV';
+  } catch (e) {
+    // PC offline — that's fine
+  }
+}
+
+init();
+</script>
+</body>
+</html>

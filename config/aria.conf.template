@@ -1,0 +1,135 @@
+# ============================================================
+# ARIA — Main Configuration (TEMPLATE)
+# ============================================================
+# Copy this to config/aria.conf and fill in your details.
+# config/aria.conf is in .gitignore — never commit your real
+# API keys.
+#
+# Player: Hidarikikinoaku (LeftHandDevil)
+# Coach:  Aria (@migikonokami / RightHandGod)
+# Target: Platinum II → Predator
+# ============================================================
+
+[player]
+username         = YourInGameUsername
+display_name     = YourDisplayName
+current_rank     = Gold 4
+current_rp       = 0
+rp_to_next       = 750
+target_rank      = Predator
+controller       = GameSir G7 Pro 8K
+
+[aria]
+name             = Aria
+handle           = migikonokami
+full_handle      = RightHandGod
+personality      = firm_caring
+voice_style      = balanced
+
+[recording]
+obs_host         = localhost
+obs_port         = 4455
+obs_password     =
+
+replay_buffer_seconds = 90
+clip_before_event     = 20
+clip_after_event      = 8
+
+clips_folder     = data/clips
+sessions_folder  = data/sessions
+reports_folder   = data/reports
+
+[detection]
+apex_username    = YourInGameUsername
+
+[liveapi]
+liveapi_host     = 127.0.0.1
+liveapi_port     = 7777
+use_live_api     = true
+
+killfeed_x       = 0
+killfeed_y       = 0
+killfeed_w       = 0
+killfeed_h       = 0
+
+ocr_confidence   = 0.65
+poll_interval    = 0.5
+
+[analysis]
+# Get your key at: https://platform.openai.com/api-keys
+openai_api_key   =
+
+vision_model     = gpt-4o
+coaching_model   = gpt-4o
+
+max_frames_per_clip = 8
+max_clips_per_match = 10
+
+[youtube]
+channel_id       =
+
+upload_day       = sunday
+upload_time      = 20:00
+
+default_visibility = public
+
+channel_name     = YourName | Coached by Aria
+channel_handle   = @YourHandle
+channel_tagline  = Gold 4 to Predator. My AI coach breaks down every mistake.
+
+[social]
+tiktok_handle    = @yourhandle
+instagram_handle = @yourhandle
+twitter_handle   = @yourhandle
+reddit_user      = u/yourhandle
+twitch_channel   = yourhandle
+
+# Fill these in after creating API accounts (see README.md)
+tiktok_session_id    =
+instagram_username   =
+instagram_password   =
+twitter_api_key      =
+twitter_api_secret   =
+twitter_access_token =
+twitter_access_secret=
+reddit_client_id     =
+reddit_client_secret =
+
+[mobile]
+host             = 0.0.0.0
+port             = 8765
+
+mobile_clip_quality  = medium
+
+[aria_overlay]
+position         = bottom_right
+
+sprite_width     = 300
+sprite_height    = 400
+
+auto_dismiss     = 0
+
+show_on_startup  = true
+voice_on_startup = true
+
+[controller]
+gamesir_vendor_id  = 0x3537
+gamesir_product_id = 0x1011
+
+log_inputs         = true
+input_log_folder   = data/sessions
+
+stick_deadzone     = 0.10
+trigger_deadzone   = 0.05
+
+[notifications]
+desktop_notify   = true
+
+trigger_on_match_end    = true
+trigger_on_rank_change  = true
+trigger_on_new_highlight= false
+
+[logging]
+log_level        = INFO
+log_file         = logs/aria.log
+max_log_size_mb  = 50

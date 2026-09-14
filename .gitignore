@@ -1,0 +1,105 @@
+# ============================================================
+# ARIA — .gitignore
+# ============================================================
+
+# ── Secrets — NEVER commit these ─────────────────────────────
+config/aria.conf          # contains API keys
+client_secrets.json       # YouTube OAuth credentials
+token.json                # YouTube OAuth token
+.env
+
+# ── Python ───────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+MANIFEST
+
+# ── Virtual environments ──────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+.env/
+
+# ── Data — large files, personal data ────────────────────────
+data/clips/               # OBS clips (can be GBs)
+data/sessions/            # session archives
+data/reports/             # coaching reports (personal)
+data/exports/             # exported reports
+data/youtube/             # compiled YouTube videos
+data/annotated/           # annotated clips
+data/aria_voice.wav       # TTS voice file
+data/tunnel_url.txt       # cloudflare tunnel URL
+
+# ── Logs ─────────────────────────────────────────────────────
+logs/
+*.log
+
+# ── Assets — binary/generated, not tracked ───────────────────
+assets/sprites/*.png
+assets/sprites/*.gif
+assets/sounds/*.wav
+assets/sounds/*.mp3
+assets/sounds/*.ogg
+
+# ── OBS installer (if downloaded by ARIA_START) ───────────────
+obs_installer.exe
+
+# ── Generated launcher (created by ARIA_START) ───────────────
+LAUNCH_APEX.bat
+
+# ── Apex Live API config (written to Apex folder, not here) ──
+liveapi.json
+
+# ── cloudflared binary ───────────────────────────────────────
+cloudflared
+cloudflared.exe
+
+# ── macOS ─────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ── Windows ──────────────────────────────────────────────────
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ── IDEs ─────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Jupyter ──────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ============================================================
+# KEEP these tracked even though their directories are ignored:
+# ============================================================
+!data/.gitkeep
+!data/clips/.gitkeep
+!data/sessions/.gitkeep
+!data/reports/.gitkeep
+!assets/sprites/.gitkeep
+!assets/sounds/.gitkeep
+!assets/templates/.gitkeep
+!logs/.gitkeep
