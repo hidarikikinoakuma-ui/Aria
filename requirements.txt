@@ -3,79 +3,71 @@
 # Requirements File
 # Player: Hidarikikinoaku (LeftHandDevil)
 # Coach:  Aria (migikonokami / RightHandGod)
+# Python: 3.11+ (tested on 3.14)
 # ============================================================
 
 # --- Core ---
-python==3.11.*
-numpy==1.26.4
-opencv-python==4.9.0.80
-Pillow==10.3.0
-pyautogui==0.9.54
-mss==9.0.1                    # screen capture (low overhead)
-psutil==5.9.8                 # process monitoring
+numpy>=2.1.0
+opencv-python>=4.10.0.84
+Pillow>=10.4.0
+pyautogui>=0.9.54
+mss>=9.0.1                    # screen capture (low overhead)
+psutil>=6.0.0                 # process monitoring
 
-# --- OCR (kill feed, damage numbers) ---
-easyocr==1.7.1
-pytesseract==0.3.10
+# --- OCR (kill feed fallback) ---
+easyocr>=1.7.1
+pytesseract>=0.3.10
 
 # --- Controller Input (GameSir G7 Pro) ---
-inputs==0.5                   # HID input reading
-pywinusb==0.4.2               # Windows USB HID hook
-pygame==2.5.2                 # fallback controller input
+inputs>=0.5                   # HID input reading
+pywinusb>=0.4.2               # Windows USB HID hook
+pygame>=2.6.0                 # fallback controller input
 
 # --- OBS Integration ---
-obs-websocket-py==1.0.0       # OBS replay buffer control
+obs-websocket-py>=1.0.0       # OBS replay buffer control
 
-# --- AI / Vision Analysis ---
-openai==1.30.1                # GPT-4o Vision for fight analysis
-anthropic==0.25.0             # Claude fallback
-sentence-transformers==2.7.0  # local embeddings for memory
+# --- AI / Vision Analysis (NVIDIA NIM — free credits at build.nvidia.com) ---
+openai>=1.50.0                # OpenAI-compatible client — works with NIM and OpenAI
 
 # --- Text to Speech (Aria's voice — runs locally) ---
-TTS==0.22.0                   # Coqui TTS — offline, no data cost
+TTS>=0.22.0                   # Coqui TTS XTTS v2 — offline, no data cost
 
 # --- Video Processing ---
-ffmpeg-python==0.2.0          # clip trimming, compilation
-moviepy==1.0.3                # video editing, captions
-imageio==2.34.1
-imageio-ffmpeg==0.4.9
+ffmpeg-python>=0.2.0          # clip trimming, compilation
+moviepy>=1.0.3                # video editing, captions
+imageio>=2.34.1
+imageio-ffmpeg>=0.4.9
 
 # --- Desktop Overlay (Aria's avatar) ---
-PyQt5==5.15.10                # transparent overlay window
-PyQt5-sip==12.13.0
+PyQt5>=5.15.10                # transparent overlay window
+PyQt5-sip>=12.13.0
 
 # --- YouTube & Social ---
-google-api-python-client==2.128.0   # YouTube Data API v3
-google-auth==2.29.0
-google-auth-oauthlib==1.2.0
-google-auth-httplib2==0.2.0
+google-api-python-client>=2.128.0   # YouTube Data API v3
+google-auth>=2.29.0
+google-auth-oauthlib>=1.2.0
+google-auth-httplib2>=0.2.0
 
 # --- Mobile API ---
-fastapi==0.111.0              # mobile companion backend
-uvicorn==0.29.0               # API server
-websockets==12.0              # real-time mobile chat
+fastapi>=0.115.0              # mobile companion backend
+uvicorn>=0.32.0               # API server
+websockets>=13.0              # real-time mobile chat
 
 # --- Database (local, private) ---
-SQLAlchemy==2.0.30            # session + habit tracking
-aiosqlite==0.20.0
-
-# --- Image Generation (Aria's artwork) ---
-diffusers==0.27.2             # Stable Diffusion local
-transformers==4.40.2
-torch==2.3.0                  # auto GPU/CPU detection
-accelerate==0.30.0
+SQLAlchemy>=2.0.30            # session + habit tracking
+aiosqlite>=0.20.0
 
 # --- Social Media Automation ---
-tweepy==4.14.0                # Twitter/X
-instagrapi==2.0.0             # Instagram
-tiktok-uploader==1.3.0        # TikTok
-praw==7.7.1                   # Reddit
+tweepy>=4.14.0                # Twitter/X
+instagrapi>=2.0.0             # Instagram
+tiktok-uploader>=1.3.0        # TikTok
+praw>=7.7.1                   # Reddit
 
 # --- Utilities ---
-python-dotenv==1.0.1          # environment config
-requests==2.32.2
-aiohttp==3.9.5
-schedule==1.2.1               # weekly YouTube upload scheduler
-rich==13.7.1                  # terminal output formatting
-loguru==0.7.2                 # logging
-pydantic==2.7.1               # data validation
+python-dotenv>=1.0.1          # environment config
+requests>=2.32.3
+aiohttp>=3.11.0
+schedule>=1.2.2               # weekly YouTube upload scheduler
+rich>=13.9.0                  # terminal output formatting
+loguru>=0.7.2                 # logging
+pydantic>=2.9.0               # data validation
