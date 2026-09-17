@@ -2970,6 +2970,39 @@ class AriaSystem:
 
 
 # ════════════════════════════════════════════════════════════════
+#  DOCKER SIGNAL — tell the Aria container about Apex state
+# ════════════════════════════════════════════════════════════════
+
+_DOCKER_ARIA_URL = os.environ.get("DOCKER_ARIA_URL", "http://localhost:8765")
+
+def _signal_docker_apex_state(running: bool):
+    """
+    POST to the Aria Docker container to tell it whether Apex is running.
+    This solves the Docker/Windows process-visibility gap — the container
+    can't read Windows processes directly, so we push the state to it.
+
+    Called by the main loop on Apex launch and close.
+    Fails silently if the container isn't running (not required).
+    """
+    try:
+        import urllib.request, json as _json
+        payload = _json.dumps({"running": running}).encode()
+        req = urllib.request.Request(
+            f"{_DOCKER_ARIA_URL}/api/apex-state",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=2):
+            pass
+        logger.debug(
+            f"Docker notified: Apex {'RUNNING' if running else 'CLOSED'}"
+        )
+    except Exception:
+        pass   # Docker container not running — that's fine
+
+
+# ════════════════════════════════════════════════════════════════
 #  MAIN
 # ════════════════════════════════════════════════════════════════
 
@@ -3065,8 +3098,19 @@ def _launch_aria(config: dict):
 def _run_headless(aria: AriaSystem):
     aria.start()
     logger.info("Aria is active. Waiting for Apex... 🎮")
+    _apex_was_running = False
     try:
-        while True: time.sleep(1)
+        while True:
+            # Check if Apex launched or closed and notify Docker container
+            if PSUTIL_AVAILABLE:
+                _now_running = any(
+                    p.info["name"] and p.info["name"].lower() == "r5apex_dx12.exe"
+                    for p in psutil.process_iter(["name"])
+                )
+                if _now_running != _apex_was_running:
+                    _apex_was_running = _now_running
+                    _signal_docker_apex_state(_now_running)
+            time.sleep(5)
     except KeyboardInterrupt:
         aria.stop()
 

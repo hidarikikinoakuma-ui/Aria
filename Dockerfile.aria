@@ -1,0 +1,79 @@
+# ============================================================
+# Aria Backend — coaching engine + mobile API
+# ============================================================
+# What runs here:
+#   - FastAPI mobile companion server (port 8765)
+#   - Apex clip analysis (sends images/clips to NIM)
+#   - Session + habit tracking (SQLite)
+#   - Social posting (Twitter, Reddit)
+#   - YouTube upload scheduler
+#
+# What does NOT run here (needs Windows desktop):
+#   - OBS control
+#   - Game overlay (PyQt5)
+#   - Controller HID reading
+#   - Screen capture (mss)
+# ============================================================
+
+FROM python:3.11-slim
+
+# System deps — ffmpeg for clip processing, libGL for opencv
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    libglib2.0-0 \
+    libgl1 \
+    libgomp1 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /aria
+
+# Copy requirements first so Docker can cache the pip layer
+COPY requirements.txt .
+
+# Install Python deps — skip Windows-only and desktop packages
+RUN pip install --no-cache-dir \
+    numpy>=2.1.0 \
+    opencv-python-headless>=4.10.0.84 \
+    Pillow>=10.4.0 \
+    psutil>=6.0.0 \
+    openai>=1.50.0 \
+    ffmpeg-python>=0.2.0 \
+    moviepy>=1.0.3 \
+    imageio>=2.34.1 \
+    imageio-ffmpeg>=0.4.9 \
+    fastapi>=0.115.0 \
+    uvicorn>=0.32.0 \
+    websockets>=13.0 \
+    SQLAlchemy>=2.0.30 \
+    aiosqlite>=0.20.0 \
+    tweepy>=4.14.0 \
+    praw>=7.7.1 \
+    google-api-python-client>=2.128.0 \
+    google-auth>=2.29.0 \
+    google-auth-oauthlib>=1.2.0 \
+    google-auth-httplib2>=0.2.0 \
+    python-dotenv>=1.0.1 \
+    requests>=2.32.3 \
+    aiohttp>=3.11.0 \
+    schedule>=1.2.2 \
+    rich>=13.9.0 \
+    loguru>=0.7.2 \
+    pydantic>=2.9.0 \
+    httpx>=0.27.0
+
+# Copy the full project
+COPY . .
+
+# Persist data between restarts
+VOLUME ["/aria/data", "/aria/config", "/aria/clips", "/aria/assets"]
+
+# Mobile API port
+EXPOSE 8765
+
+# Health check — hits the mobile API health endpoint
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8765/health || exit 1
+
+# Run via the Docker-specific entry point that reads env vars for config
+CMD ["python", "aria_server.py"]

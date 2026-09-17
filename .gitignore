@@ -8,8 +8,11 @@ client_secrets.json       # YouTube OAuth credentials
 token.json                # YouTube OAuth token
 .env
 
-# ── Python ───────────────────────────────────────────────────
-__pycache__/
+# ── PyInstaller / EXE build ───────────────────────────────────
+dist/
+build/
+*.spec
+Aria.exe
 *.py[cod]
 *$py.class
 *.pyo

@@ -1,0 +1,131 @@
+# ============================================================
+# Aria Docker Compose Stack
+# ============================================================
+#
+# Services:
+#   aria    — coaching backend + mobile API  (port 8765)
+#   tts     — Coqui XTTS v2 voice server     (port 5002)
+#
+# AI inference runs on your Windows host via Ollama (NOT in Docker).
+# Docker containers reach it at http://host.docker.internal:11434
+#
+# Auto-switch logic (nim_router.py):
+#   r5apex_dx12.exe running  →  cloud NIM API  (GPU stays free for Apex)
+#   r5apex_dx12.exe NOT running  →  local Ollama  (full GPU, fast, free)
+#
+# Quick start:
+#   1. Install Ollama:  winget install Ollama.Ollama
+#   2. Pull the model:  ollama pull qwen2.5vl:7b
+#   3. Copy .env:       copy .env.example .env  (fill in NIM_API_KEY)
+#   4. Start stack:     docker compose up -d
+#   5. Phone access:    http://<your-PC-IP>:8765
+#
+# ============================================================
+
+services:
+
+  # ── Aria Backend ────────────────────────────────────────────
+  aria:
+    build:
+      context: .
+      dockerfile: Dockerfile.aria
+    container_name: aria-backend
+    restart: unless-stopped
+    ports:
+      - "8765:8765"
+    environment:
+      # Local AI — Ollama on the Windows host
+      OLLAMA_URL: http://host.docker.internal:11434/v1
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5vl:7b}
+
+      # Cloud AI — used when r5apex_dx12.exe is running
+      NIM_API_KEY: ${NIM_API_KEY}
+      NIM_BASE_URL_CLOUD: https://integrate.api.nvidia.com/v1
+      AI_MODEL_CLOUD: ${AI_MODEL_CLOUD:-qwen/qwen3.5-vl}
+
+      # TTS — local XTTS container
+      TTS_SERVER_URL: http://tts:5002
+
+      # Optional social
+      TWITTER_API_KEY: ${TWITTER_API_KEY:-}
+      TWITTER_API_SECRET: ${TWITTER_API_SECRET:-}
+      TWITTER_ACCESS_TOKEN: ${TWITTER_ACCESS_TOKEN:-}
+      TWITTER_ACCESS_SECRET: ${TWITTER_ACCESS_SECRET:-}
+      REDDIT_CLIENT_ID: ${REDDIT_CLIENT_ID:-}
+      REDDIT_CLIENT_SECRET: ${REDDIT_CLIENT_SECRET:-}
+
+      MOBILE_PORT: 8765
+      LOG_LEVEL: INFO
+
+    volumes:
+      - aria-data:/aria/data        # sessions, habits, SQLite DB
+      - aria-clips:/aria/clips      # match clips
+      - aria-config:/aria/config    # aria.conf
+      - ./assets:/aria/assets:ro    # voice ref WAV, avatar image
+
+    depends_on:
+      tts:
+        condition: service_healthy
+
+    # host.docker.internal needs this on Linux; on Docker Desktop for Windows
+    # it works automatically, but the entry doesn't hurt.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    networks:
+      - aria-net
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8765/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ── XTTS Voice Server ────────────────────────────────────────
+  tts:
+    build:
+      context: .
+      dockerfile: Dockerfile.tts
+    container_name: aria-tts
+    restart: unless-stopped
+    ports:
+      - "5002:5002"
+    environment:
+      TTS_MODEL: tts_models/multilingual/multi-dataset/xtts_v2
+      TTS_SPEAKER: ${TTS_SPEAKER:-Ana Florence}
+      TTS_LANGUAGE: en
+      VOICE_DIR: /tts/voices
+
+    volumes:
+      - ./assets:/tts/voices:ro     # drop aria_voice_ref.wav here for voice cloning
+
+    networks:
+      - aria-net
+
+    # GPU speeds up synthesis — remove deploy block if no Container Toolkit
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 120s
+
+# ── Named volumes ────────────────────────────────────────────
+volumes:
+  aria-data:
+  aria-clips:
+  aria-config:
+
+# ── Network ──────────────────────────────────────────────────
+networks:
+  aria-net:
+    driver: bridge

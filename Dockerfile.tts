@@ -1,0 +1,51 @@
+# ============================================================
+# Aria Voice Server — Coqui XTTS v2
+# ============================================================
+# Runs XTTS v2 as a standalone HTTP API.
+# Aria backend calls POST /tts to get speech back as a WAV.
+#
+# GPU: If you have an NVIDIA GPU, swap the base image to
+#      nvidia/cuda:12.1.0-cudnn8-runtime-ubuntu22.04
+#      and add --gpus all to docker run / compose deploy.
+#      CPU-only works fine but is slower (~2-4s per response).
+# ============================================================
+
+FROM python:3.11-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    libsndfile1 \
+    libgomp1 \
+    curl \
+    espeak-ng \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /tts
+
+# Install TTS and a lightweight API server
+RUN pip install --no-cache-dir \
+    TTS>=0.22.0 \
+    fastapi>=0.115.0 \
+    uvicorn>=0.32.0 \
+    python-multipart>=0.0.9 \
+    pydantic>=2.9.0 \
+    loguru>=0.7.2
+
+# Pre-download the XTTS v2 model at build time so first startup is instant.
+# This adds ~1.8 GB to the image — remove the RUN line below if you'd rather
+# download on first run (saves image size, costs 2-3 min on first boot).
+RUN python -c "from TTS.api import TTS; TTS('tts_models/multilingual/multi-dataset/xtts_v2')"
+
+# The voice server script
+COPY docker/tts_server.py /tts/tts_server.py
+
+# Mount point for a custom voice reference WAV
+# Put your voice clone file at:  ./assets/aria_voice_ref.wav
+VOLUME ["/tts/voices"]
+
+EXPOSE 5002
+
+HEALTHCHECK --interval=30s --timeout=15s --start-period=120s --retries=3 \
+    CMD curl -f http://localhost:5002/health || exit 1
+
+CMD ["python", "tts_server.py"]
