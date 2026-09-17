@@ -69,13 +69,18 @@ import re
 import math
 import base64
 import shutil
-import schedule
 import random
 from pathlib import Path
 from datetime import datetime, timedelta
 from dataclasses import dataclass, field, asdict
 from enum import Enum
 from typing import Optional
+
+try:
+    import schedule
+    SCHEDULE_AVAILABLE = True
+except ImportError:
+    SCHEDULE_AVAILABLE = False
 
 # Third-party — installed at runtime if missing
 try:
